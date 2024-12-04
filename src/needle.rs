@@ -12,7 +12,7 @@ pub struct CrosswordNeedleSearch {
 }
 
 impl CrosswordNeedleSearch {
-    pub fn new(crossword: Crossword) -> Self {
+    pub fn new(crossword: &Crossword) -> Self {
         let rows = crossword.rows();
         let cols = crossword.cols();
 
@@ -68,7 +68,16 @@ impl CrosswordNeedleSearch {
 
     pub fn find(&self, needle: &[u8]) -> usize {
         let reverse = needle.iter().rev().copied().collect::<SmallVec<[u8; 16]>>();
-        let needles = [Finder::new(needle), Finder::new(&reverse)];
+        let needles = {
+            let mut needles = SmallVec::<[Finder; 2]>::new();
+            needles.push(Finder::new(needle));
+
+            if reverse.as_slice() != needle {
+                needles.push(Finder::new(&reverse));
+            }
+
+            needles
+        };
 
         self.plans
             .iter()

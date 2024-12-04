@@ -1,78 +1,118 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
-    iter::once,
+    io::{BufRead, BufReader, BufWriter, Write},
+    path::PathBuf,
 };
 
-use memchr::memmem::Finder;
+use anyhow::bail;
+use clap::Parser;
+use crosswords::{hashmap::CrosswordHashMap, needle::CrosswordNeedleSearch, Direction};
+use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 
-const DELIM: u8 = b'.';
+#[derive(Parser)]
+enum Subcommands {
+    Generate {
+        #[arg(short, long)]
+        rows: usize,
+
+        #[arg(short, long)]
+        cols: usize,
+
+        #[arg()]
+        output: PathBuf,
+    },
+
+    Solve {
+        #[arg(long)]
+        word: String,
+
+        #[arg()]
+        input: PathBuf,
+    },
+}
 
 fn main() -> anyhow::Result<()> {
-    let data = BufReader::new(File::open("data.txt")?)
-        .lines()
-        .map(|v| v.map(|v| v.into_bytes()))
-        .collect::<Result<Vec<_>, _>>()?;
+    let args = Subcommands::parse();
 
-    let rows = data.len();
-    let cols = data[0].len();
+    match args {
+        Subcommands::Generate { rows, cols, output } => {
+            let rng = &mut rand::thread_rng();
+            let mut crosswords = crosswords::Crossword::new(
+                rows,
+                rng.sample_iter(Uniform::new(b'a', b'z' + 1))
+                    .take(rows * cols)
+                    .collect::<Box<[u8]>>(),
+            );
 
-    let direct = data
-        .iter()
-        .flat_map(|v| v.iter().copied().chain(once(DELIM)))
-        .collect::<Box<[u8]>>();
+            let words = include_str!("../words.txt")
+                .trim()
+                .split('\n')
+                .collect::<Vec<_>>();
 
-    let transposed = (0..cols)
-        .flat_map(|col_idx| data.iter().map(move |row| row[col_idx]).chain(once(DELIM)))
-        .collect::<Box<[u8]>>();
+            for word in words.choose_multiple(rng, rows + cols) {
+                loop {
+                    let dir = *Direction::ALL.choose(rng).unwrap();
+                    let row = rng.gen_range(0..rows);
+                    let col = rng.gen_range(0..cols);
 
-    let diagonal = (0..rows)
-        .flat_map(|diag_idx| {
-            let start_row = rows - diag_idx - 1;
-            let data = &data;
+                    if crosswords.set_word(row, col, dir, word.as_bytes().iter().copied()) {
+                        break;
+                    }
+                }
+            }
 
-            (0..(rows - start_row).min(cols))
-                .map(move |j| data[start_row + j][j])
-                .chain(once(DELIM))
-        })
-        .chain((1..cols).flat_map(|start_col| {
-            let data = &data;
+            let mut writer = BufWriter::new(File::create(output)?);
 
-            (0..(cols - start_col).min(rows))
-                .map(move |j| data[j][start_col + j])
-                .chain(once(DELIM))
-        }))
-        .collect::<Box<[u8]>>();
+            for (idx, row) in crosswords.get_rows().enumerate() {
+                if idx > 0 {
+                    writer.write_all(b"\n")?;
+                }
 
-    let anti_diagonal = (0..cols)
-        .flat_map(|start_col| {
-            let data = &data;
+                writer.write_all(row)?;
+            }
+        }
+        Subcommands::Solve { word, input } => {
+            let lines = BufReader::new(File::open(input)?).lines();
+            let mut data = vec![];
 
-            (0..(1 + start_col).min(rows))
-                .map(move |j| data[j][start_col - j])
-                .chain(once(DELIM))
-        })
-        .chain((1..rows).flat_map(|start_row| {
-            let data = &data;
+            let mut cols = 0;
 
-            (0..(rows - start_row).min(cols))
-                .map(move |j| data[start_row + j][cols - j - 1])
-                .chain(once(DELIM))
-        }))
-        .collect::<Box<[u8]>>();
+            for row in lines {
+                let row = row?;
 
-    let directions = [direct, transposed, diagonal, anti_diagonal];
+                if row.is_empty() {
+                    continue;
+                }
 
-    let needles = [b"XMAS", b"SAMX"].map(Finder::new);
-    let mut occurrences = 0;
+                if cols == 0 {
+                    cols = row.len();
+                }
 
-    for dir in directions {
-        for needle in &needles {
-            occurrences += needle.find_iter(&dir).count();
+                if cols != row.len() {
+                    bail!("inconsistent row length");
+                }
+
+                data.extend(row.as_bytes().iter().copied());
+            }
+
+            let crossword = crosswords::Crossword::new(data.len() / cols, data.into_boxed_slice());
+
+            println!(
+                "naive: {}",
+                crosswords::naive::find_naive(&crossword, word.as_bytes())
+            );
+
+            {
+                let needle = CrosswordNeedleSearch::new(&crossword);
+                println!("needle: {}", needle.find(word.as_bytes()));
+            }
+
+            {
+                let hash = CrosswordHashMap::<'_, 4>::new(&crossword);
+                println!("hash: {}", hash.find(word.as_bytes()));
+            }
         }
     }
-
-    println!("{occurrences} occurrences");
 
     Ok(())
 }

@@ -38,7 +38,7 @@ pub fn find_naive(crossword: &Crossword, needle: &[u8]) -> usize {
 
     for row in 0..crossword.rows() {
         for col in 0..crossword.cols() {
-            for dir in Direction::all() {
+            for dir in Direction::ALL {
                 let Some(word) = crossword.get_word(row, col, dir, needle.len()) else {
                     continue;
                 };
