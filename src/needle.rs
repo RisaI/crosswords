@@ -3,7 +3,7 @@ use std::iter::once;
 use memchr::memmem::Finder;
 use smallvec::SmallVec;
 
-use crate::{Crossword, Solver};
+use crate::{utils::is_palindrome, Crossword, Solver};
 
 const DELIM: u8 = b'.';
 
@@ -74,7 +74,7 @@ impl Solver for CrosswordNeedleSearch {
             let mut needles = SmallVec::<[Finder; 2]>::new();
             needles.push(Finder::new(word));
 
-            if reverse.as_slice() != word {
+            if !is_palindrome(word) {
                 needles.push(Finder::new(&reverse));
             }
 
@@ -83,11 +83,27 @@ impl Solver for CrosswordNeedleSearch {
 
         self.plans
             .iter()
-            .flat_map(|v| {
+            .flat_map(|plan| {
                 needles
                     .iter()
-                    .map(move |needle| needle.find_iter(v).count())
+                    .map(move |needle| needle.find_iter(plan).count())
             })
             .sum::<usize>()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn transposed_shapes() {
+        let crossword = Crossword::new(3, b"abcdefghi".to_vec().into_boxed_slice());
+        let needle = CrosswordNeedleSearch::new(&crossword);
+
+        assert_eq!(needle.plans[0].as_ref(), b"abc.def.ghi.");
+        assert_eq!(needle.plans[1].as_ref(), b"adg.beh.cfi.");
+        assert_eq!(needle.plans[2].as_ref(), b"g.dh.aei.bf.c.");
+        assert_eq!(needle.plans[3].as_ref(), b"a.bd.ceg.fh.i.");
     }
 }

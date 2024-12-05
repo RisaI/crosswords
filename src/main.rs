@@ -6,8 +6,7 @@ use std::{
 
 use clap::Parser;
 use crosswords::{
-    hashmap::CrosswordHashMap, naive::NaiveSolver, needle::CrosswordNeedleSearch, Crossword,
-    Direction, Solver,
+    Crossword, CrosswordHashMap, CrosswordNeedleSearch, Direction, NaiveSolver, Solver,
 };
 use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 

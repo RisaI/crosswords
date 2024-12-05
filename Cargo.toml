@@ -11,6 +11,7 @@ name = "solvers"
 harness = false
 
 [dependencies]
+ahash = "0.8.11"
 anyhow = "1.0.94"
 clap = { version = "4.5.22", features = ["derive"] }
 memchr = "2.7.4"

@@ -1,37 +1,4 @@
-use crate::{Crossword, Direction, Solver};
-
-pub fn many_iter_eq<T: PartialEq, const N: usize>(
-    mut pivot: impl Iterator<Item = T>,
-    mut iters: [&mut dyn Iterator<Item = T>; N],
-) -> [bool; N] {
-    let mut eqs = [true; N];
-
-    'outer: loop {
-        let pivot = pivot.next();
-
-        for (i, iter) in iters.iter_mut().enumerate() {
-            // Don't poll known non-equal values
-            if !eqs[i] {
-                continue;
-            }
-
-            if pivot != iter.next() {
-                eqs[i] = false;
-
-                // Terminate if none is equal
-                if eqs.iter().all(|v| !v) {
-                    break 'outer;
-                }
-            }
-        }
-
-        if pivot.is_none() {
-            break;
-        }
-    }
-
-    eqs
-}
+use crate::{utils::many_iter_eq, Crossword, Direction, Solver};
 
 pub struct NaiveSolver<'a>(&'a Crossword);
 

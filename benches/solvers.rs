@@ -1,12 +1,10 @@
 use std::{fs::File, io::BufReader};
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use crosswords::{
-    hashmap::CrosswordHashMap, naive::NaiveSolver, needle::CrosswordNeedleSearch, Crossword, Solver,
-};
+use crosswords::{Crossword, CrosswordHashMap, CrosswordNeedleSearch, NaiveSolver, Solver};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let crossword = Crossword::parse(BufReader::new(File::open("test.txt").unwrap())).unwrap();
+    let crossword = Crossword::parse(BufReader::new(File::open("test_64k.txt").unwrap())).unwrap();
 
     let words = include_str!("../words.txt")
         .split('\n')
@@ -15,15 +13,19 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("solvers");
 
-    group.bench_function("naive", |b| {
-        let solver = NaiveSolver::new(&crossword);
+    group.sample_size(20);
 
-        b.iter(|| {
-            for word in &words {
-                solver.count_occurrences(word);
-            }
+    group
+        .bench_function("naive", |b| {
+            let solver = NaiveSolver::new(&crossword);
+
+            b.iter(|| {
+                for word in &words {
+                    solver.count_occurrences(word);
+                }
+            })
         })
-    });
+        .sample_size(10);
 
     group.bench_function("needle", |b| {
         let solver = CrosswordNeedleSearch::new(&crossword);

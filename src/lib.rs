@@ -1,9 +1,15 @@
-use std::io::BufRead;
+mod hashmap;
+mod naive;
+mod needle;
+mod trie;
+mod utils;
 
-pub mod hashmap;
-pub mod naive;
-pub mod needle;
-pub mod trie;
+pub use hashmap::*;
+pub use naive::*;
+pub use needle::*;
+// pub use trie::*;
+
+use std::io::BufRead;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Direction {
@@ -31,7 +37,7 @@ impl Direction {
         len: usize,
         bounds: (usize, usize),
     ) -> Option<(usize, usize)> {
-        if self == Direction::AntiDiagonal && (point.0 < len || point.1 < len) {
+        if self == Direction::AntiDiagonal && point.1 < len {
             return None;
         }
 
@@ -123,7 +129,7 @@ impl Crossword {
         dir: Direction,
         len: usize,
     ) -> Option<impl Iterator<Item = u8> + '_> {
-        dir.shift_point_bounded((row, col), len, (self.rows(), self.cols()))?;
+        dir.shift_point_bounded((row, col), len - 1, (self.rows(), self.cols()))?;
 
         Some((0..len).map(move |i| {
             let (row, col) = dir.shift_point((row, col), i);
@@ -139,7 +145,7 @@ impl Crossword {
         word: impl ExactSizeIterator<Item = u8>,
     ) -> bool {
         if dir
-            .shift_point_bounded((row, col), word.len(), (self.rows(), self.cols()))
+            .shift_point_bounded((row, col), word.len() - 1, (self.rows(), self.cols()))
             .is_none()
         {
             return false;
