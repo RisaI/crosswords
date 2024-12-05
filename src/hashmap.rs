@@ -2,26 +2,27 @@ use std::collections::HashMap;
 
 use smallvec::SmallVec;
 
-use crate::{Crossword, Direction};
+use crate::{Crossword, Direction, Solver};
 
 type Positions = SmallVec<[(usize, usize, Direction); 2]>;
 
-pub struct CrosswordHashMap<'a, const MAX_WORD_LENGTH: usize> {
+pub struct CrosswordHashMap<'a> {
+    word_len: usize,
     crossword: &'a Crossword,
-    complete_words: HashMap<SmallVec<[u8; MAX_WORD_LENGTH]>, usize>,
-    incomplete_words: HashMap<[u8; MAX_WORD_LENGTH], Positions>,
+    complete_words: HashMap<SmallVec<[u8; 16]>, usize>,
+    incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions>,
 }
 
-impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
-    pub fn new(crossword: &'a Crossword) -> Self {
+impl<'a> CrosswordHashMap<'a> {
+    pub fn new(crossword: &'a Crossword, word_len: usize) -> Self {
         let mut complete_words = HashMap::new();
-        let mut incomplete_words: HashMap<[u8; MAX_WORD_LENGTH], Positions> = HashMap::new();
+        let mut incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions> = HashMap::new();
 
-        fn add_all_substrings<const MAX_WORD_LENGTH: usize>(
-            target: &mut HashMap<SmallVec<[u8; MAX_WORD_LENGTH]>, usize>,
+        fn add_all_substrings(
+            target: &mut HashMap<SmallVec<[u8; 16]>, usize>,
             word: impl Iterator<Item = u8>,
         ) {
-            let mut current = SmallVec::<[u8; MAX_WORD_LENGTH]>::new();
+            let mut current = SmallVec::<[u8; 16]>::new();
 
             for next in word {
                 current.push(next);
@@ -37,8 +38,8 @@ impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
         for row in 0..crossword.rows() {
             for col in 0..crossword.cols() {
                 for dir in Direction::ALL {
-                    let Some(mut word) = crossword.get_word(row, col, dir, MAX_WORD_LENGTH) else {
-                        for len in (1..MAX_WORD_LENGTH).rev() {
+                    let Some(word) = crossword.get_word(row, col, dir, word_len) else {
+                        for len in (1..word_len).rev() {
                             if let Some(found) = crossword.get_word(row, col, dir, len) {
                                 add_all_substrings(&mut complete_words, found);
                                 break;
@@ -48,7 +49,7 @@ impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
                         continue;
                     };
 
-                    let word = std::array::from_fn(|_| word.next().unwrap());
+                    let word = word.take(word_len).collect::<SmallVec<[u8; 16]>>();
 
                     add_all_substrings(&mut complete_words, word.iter().copied());
                     incomplete_words
@@ -60,6 +61,7 @@ impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
         }
 
         Self {
+            word_len,
             crossword,
             complete_words,
             incomplete_words,
@@ -67,22 +69,20 @@ impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
     }
 
     pub fn estimate_size(&self) -> usize {
-        self.complete_words.len() * (MAX_WORD_LENGTH + 1)
-            + self.incomplete_words.len() * MAX_WORD_LENGTH
+        self.complete_words.len() * (16 + 1)
+            + self.incomplete_words.len() * 16
             + self
                 .incomplete_words
                 .values()
                 .map(|p| p.len() * (size_of::<(usize, usize, Direction)>()))
                 .sum::<usize>()
     }
+}
 
-    pub fn find(&self, word: &[u8]) -> usize {
-        if word.len() <= MAX_WORD_LENGTH {
-            let reverse = word
-                .iter()
-                .rev()
-                .copied()
-                .collect::<SmallVec<[u8; MAX_WORD_LENGTH]>>();
+impl Solver for CrosswordHashMap<'_> {
+    fn count_occurrences(&self, word: &[u8]) -> usize {
+        if word.len() <= self.word_len {
+            let reverse = word.iter().rev().copied().collect::<SmallVec<[u8; 16]>>();
 
             return self.complete_words.get(word).copied().unwrap_or(0)
                 + if reverse.as_slice() != word {
@@ -92,8 +92,17 @@ impl<'a, const MAX_WORD_LENGTH: usize> CrosswordHashMap<'a, MAX_WORD_LENGTH> {
                 };
         }
 
-        let incomplete = std::array::from_fn(|i| word[i]);
-        let reverse = std::array::from_fn(|i| word[word.len() - i - 1]);
+        let incomplete = word
+            .iter()
+            .copied()
+            .take(self.word_len)
+            .collect::<SmallVec<[u8; 16]>>();
+        let reverse = word
+            .iter()
+            .copied()
+            .rev()
+            .take(self.word_len)
+            .collect::<SmallVec<[u8; 16]>>();
 
         let mut count = 0;
 

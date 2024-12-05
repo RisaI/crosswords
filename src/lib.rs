@@ -1,3 +1,5 @@
+use std::io::BufRead;
+
 pub mod hashmap;
 pub mod naive;
 pub mod needle;
@@ -58,6 +60,32 @@ impl Crossword {
         );
 
         Self { rows, data }
+    }
+
+    pub fn parse(reader: impl BufRead) -> anyhow::Result<Self> {
+        let mut data = vec![];
+
+        let mut cols = 0;
+
+        for row in reader.lines() {
+            let row = row?;
+
+            if row.is_empty() {
+                continue;
+            }
+
+            if cols == 0 {
+                cols = row.len();
+            }
+
+            if cols != row.len() {
+                anyhow::bail!("inconsistent row length");
+            }
+
+            data.extend(row.as_bytes().iter().copied());
+        }
+
+        Ok(Self::new(data.len() / cols, data.into_boxed_slice()))
     }
 
     pub fn rows(&self) -> usize {
@@ -124,4 +152,8 @@ impl Crossword {
 
         true
     }
+}
+
+pub trait Solver {
+    fn count_occurrences(&self, word: &[u8]) -> usize;
 }

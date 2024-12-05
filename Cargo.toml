@@ -3,6 +3,13 @@ name = "crosswords"
 version = "0.1.0"
 edition = "2021"
 
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "solvers"
+harness = false
+
 [dependencies]
 anyhow = "1.0.94"
 clap = { version = "4.5.22", features = ["derive"] }

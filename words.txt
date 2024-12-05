@@ -399,7 +399,6 @@ front
 refuse
 striped
 instrument
-far-flung
 tremendous
 push
 wonder
@@ -519,7 +518,6 @@ settle
 fit
 vessel
 parched
-extra-large
 desire
 practise
 terrific
@@ -676,7 +674,6 @@ tasty
 scratch
 humorous
 regular
-teeny-tiny
 glistening
 cabbage
 fat
@@ -749,7 +746,6 @@ church
 rob
 orange
 grease
-wide-eyed
 spark
 radiate
 pause
@@ -885,7 +881,6 @@ friction
 company
 classy
 condition
-blue-eyed
 blush
 discussion
 worry
@@ -1088,7 +1083,6 @@ old
 rabid
 war
 icicle
-ill-informed
 selection
 worm
 pushy
@@ -1179,7 +1173,6 @@ examine
 kittens
 paste
 dazzling
-mess up
 unaccountable
 noise
 greet
@@ -1504,8 +1497,6 @@ fence
 hover
 mountainous
 peel
-black-and-white
-borrow
 subtract
 oatmeal
 sincere
@@ -1521,7 +1512,6 @@ luxuriant
 lovely
 deserve
 five
-old-fashioned
 scientific
 lively
 pet
@@ -1529,7 +1519,6 @@ comfortable
 laugh
 hungry
 chance
-bite-sized
 combative
 protective
 beef
@@ -1672,7 +1661,6 @@ cooing
 familiar
 train
 coal
-second-hand
 good
 grey
 zinc
@@ -1801,7 +1789,6 @@ enthusiastic
 truthful
 tip
 measly
-extra-small
 stingy
 retire
 marble
@@ -1853,7 +1840,6 @@ value
 jumpy
 live
 inquisitive
-high-pitched
 threatening
 handsome
 chin
@@ -1946,7 +1932,6 @@ wander
 damp
 tumble
 exchange
-x-ray
 rate
 call
 wary
@@ -2031,8 +2016,6 @@ pointless
 glass
 spare
 narrow
-hard-to-find
-expert
 committee
 meat
 imaginary
@@ -2099,7 +2082,6 @@ coast
 hand
 sofa
 sense
-ill-fated
 pizzas
 recondite
 leg
@@ -2118,7 +2100,6 @@ library
 itchy
 duck
 knowledge
-well-groomed
 buzz
 wait
 puffy
@@ -2130,7 +2111,6 @@ purring
 stage
 ghost
 grandfather
-long-term
 cattle
 itch
 rock
@@ -2144,7 +2124,6 @@ nerve
 mine
 exultant
 messy
-well-made
 maid
 jolly
 prose
@@ -2170,8 +2149,6 @@ hollow
 kitty
 closed
 face
-well-to-do
-tin
 overconfident
 powder
 pine
@@ -2315,7 +2292,6 @@ trick
 organic
 shut
 stupid
-well-off
 frequent
 intend
 bird
@@ -2640,4 +2616,3 @@ magenta
 overwrought
 poison
 wish
-ad hoc

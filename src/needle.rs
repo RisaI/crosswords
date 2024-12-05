@@ -3,7 +3,7 @@ use std::iter::once;
 use memchr::memmem::Finder;
 use smallvec::SmallVec;
 
-use crate::Crossword;
+use crate::{Crossword, Solver};
 
 const DELIM: u8 = b'.';
 
@@ -65,14 +65,16 @@ impl CrosswordNeedleSearch {
             plans: [direct, transposed, diagonal, anti_diagonal],
         }
     }
+}
 
-    pub fn find(&self, needle: &[u8]) -> usize {
-        let reverse = needle.iter().rev().copied().collect::<SmallVec<[u8; 16]>>();
+impl Solver for CrosswordNeedleSearch {
+    fn count_occurrences(&self, word: &[u8]) -> usize {
+        let reverse = word.iter().rev().copied().collect::<SmallVec<[u8; 16]>>();
         let needles = {
             let mut needles = SmallVec::<[Finder; 2]>::new();
-            needles.push(Finder::new(needle));
+            needles.push(Finder::new(word));
 
-            if reverse.as_slice() != needle {
+            if reverse.as_slice() != word {
                 needles.push(Finder::new(&reverse));
             }
 

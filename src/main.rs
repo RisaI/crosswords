@@ -1,12 +1,14 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader, BufWriter, Write},
+    io::{BufReader, BufWriter, Write},
     path::PathBuf,
 };
 
-use anyhow::bail;
 use clap::Parser;
-use crosswords::{hashmap::CrosswordHashMap, needle::CrosswordNeedleSearch, Direction};
+use crosswords::{
+    hashmap::CrosswordHashMap, naive::NaiveSolver, needle::CrosswordNeedleSearch, Crossword,
+    Direction, Solver,
+};
 use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 
 #[derive(Parser)]
@@ -72,44 +74,21 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Subcommands::Solve { word, input } => {
-            let lines = BufReader::new(File::open(input)?).lines();
-            let mut data = vec![];
-
-            let mut cols = 0;
-
-            for row in lines {
-                let row = row?;
-
-                if row.is_empty() {
-                    continue;
-                }
-
-                if cols == 0 {
-                    cols = row.len();
-                }
-
-                if cols != row.len() {
-                    bail!("inconsistent row length");
-                }
-
-                data.extend(row.as_bytes().iter().copied());
-            }
-
-            let crossword = crosswords::Crossword::new(data.len() / cols, data.into_boxed_slice());
+            let crossword = Crossword::parse(BufReader::new(File::open(input)?))?;
 
             println!(
                 "naive: {}",
-                crosswords::naive::find_naive(&crossword, word.as_bytes())
+                NaiveSolver::new(&crossword).count_occurrences(word.as_bytes())
             );
 
             {
                 let needle = CrosswordNeedleSearch::new(&crossword);
-                println!("needle: {}", needle.find(word.as_bytes()));
+                println!("needle: {}", needle.count_occurrences(word.as_bytes()));
             }
 
             {
-                let hash = CrosswordHashMap::<'_, 4>::new(&crossword);
-                println!("hash: {}", hash.find(word.as_bytes()));
+                let hash = CrosswordHashMap::<'_>::new(&crossword, 4);
+                println!("hash4: {}", hash.count_occurrences(word.as_bytes()));
             }
         }
     }
