@@ -1,7 +1,10 @@
 use ahash::HashMap;
 use smallvec::SmallVec;
 
-use crate::{utils::is_palindrome, Crossword, Direction, EstimateSize, Solver};
+use crate::{
+    utils::{canonical_order, is_palindrome},
+    Crossword, Direction, EstimateSize, Solver,
+};
 
 type Positions = SmallVec<[(usize, usize, Direction); 2]>;
 
@@ -37,10 +40,12 @@ impl<'a> CrosswordHashMap<'a> {
             for next in word {
                 current.push(next);
 
-                if target.contains_key(&current) {
-                    *target.get_mut(&current).unwrap() += 1;
+                let canonical = canonical_order(&current);
+
+                if let Some(counter) = target.get_mut(canonical.as_ref()) {
+                    *counter += 1;
                 } else {
-                    target.insert(current.clone(), 1);
+                    target.insert(canonical.iter().copied().collect(), 1);
                 }
             }
         }
@@ -62,7 +67,10 @@ impl<'a> CrosswordHashMap<'a> {
                     let word = word.collect::<SmallVec<[u8; 16]>>();
 
                     if word_len > 1 || dir == Direction::Right {
-                        add_all_substrings(&mut complete_words, word.iter().copied());
+                        add_all_substrings(
+                            &mut complete_words,
+                            word.iter().copied().take(word_len),
+                        );
                     }
 
                     incomplete_words
@@ -85,17 +93,11 @@ impl<'a> CrosswordHashMap<'a> {
 impl Solver for CrosswordHashMap<'_> {
     fn count_occurrences(&self, word: &[u8]) -> usize {
         if word.len() <= self.word_len {
-            return self.complete_words.get(word).copied().unwrap_or_default()
-                + if !is_palindrome(word) {
-                    let reverse = word.iter().rev().copied().collect::<SmallVec<[u8; 16]>>();
-
-                    self.complete_words
-                        .get(&reverse)
-                        .copied()
-                        .unwrap_or_default()
-                } else {
-                    0
-                };
+            return self
+                .complete_words
+                .get(canonical_order(word).as_ref())
+                .copied()
+                .unwrap_or_default();
         }
 
         let incomplete = word
