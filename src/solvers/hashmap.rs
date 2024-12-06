@@ -1,7 +1,7 @@
 use ahash::HashMap;
 use smallvec::SmallVec;
 
-use crate::{utils::is_palindrome, Crossword, Direction, Solver};
+use crate::{utils::is_palindrome, Crossword, Direction, EstimateSize, Solver};
 
 type Positions = SmallVec<[(usize, usize, Direction); 2]>;
 
@@ -10,6 +10,15 @@ pub struct CrosswordHashMap<'a> {
     crossword: &'a Crossword,
     complete_words: HashMap<SmallVec<[u8; 16]>, usize>,
     incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions>,
+}
+
+impl EstimateSize for CrosswordHashMap<'_> {
+    fn estimate_size(&self) -> usize {
+        self.word_len.estimate_size()
+            + std::mem::size_of::<&'_ Crossword>()
+            + self.complete_words.estimate_size()
+            + self.incomplete_words.estimate_size()
+    }
 }
 
 impl<'a> CrosswordHashMap<'a> {
@@ -70,16 +79,6 @@ impl<'a> CrosswordHashMap<'a> {
             complete_words,
             incomplete_words,
         }
-    }
-
-    pub fn estimate_size(&self) -> usize {
-        self.complete_words.len() * (16 + 1)
-            + self.incomplete_words.len() * 16
-            + self
-                .incomplete_words
-                .values()
-                .map(|p| p.len() * (size_of::<(usize, usize, Direction)>()))
-                .sum::<usize>()
     }
 }
 

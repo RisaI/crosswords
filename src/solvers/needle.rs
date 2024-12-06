@@ -3,12 +3,18 @@ use std::iter::once;
 use memchr::memmem::Finder;
 use smallvec::SmallVec;
 
-use crate::{utils::is_palindrome, Crossword, Solver};
+use crate::{utils::is_palindrome, Crossword, EstimateSize, Solver};
 
 const DELIM: u8 = b'.';
 
 pub struct CrosswordNeedleSearch {
     plans: [Box<[u8]>; 4],
+}
+
+impl EstimateSize for CrosswordNeedleSearch {
+    fn estimate_size(&self) -> usize {
+        self.plans.estimate_size()
+    }
 }
 
 impl CrosswordNeedleSearch {

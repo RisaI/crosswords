@@ -2,12 +2,18 @@ use std::iter::once;
 
 use fxhash::FxHashMap as HashMap;
 
-use crate::{utils::is_palindrome, Crossword, Direction, Solver};
+use crate::{utils::is_palindrome, Crossword, Direction, EstimateSize, Solver};
 
 #[derive(Default)]
 pub struct TrieEntry {
     count: usize,
     children: HashMap<u8, TrieEntry>,
+}
+
+impl EstimateSize for TrieEntry {
+    fn estimate_size(&self) -> usize {
+        self.count.estimate_size() + self.children.estimate_size()
+    }
 }
 
 impl TrieEntry {
@@ -44,6 +50,12 @@ impl TrieEntry {
 
 pub struct Trie {
     root: TrieEntry,
+}
+
+impl EstimateSize for Trie {
+    fn estimate_size(&self) -> usize {
+        self.root.estimate_size()
+    }
 }
 
 impl Trie {

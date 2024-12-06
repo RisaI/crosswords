@@ -6,7 +6,8 @@ use std::{
 
 use clap::Parser;
 use crosswords::{
-    Crossword, CrosswordHashMap, CrosswordNeedleSearch, Direction, NaiveSolver, Solver,
+    Crossword, CrosswordHashMap, CrosswordNeedleSearch, Direction, EstimateSize, NaiveSolver,
+    Solver, Trie,
 };
 use rand::{distributions::Uniform, seq::SliceRandom, Rng};
 
@@ -27,6 +28,11 @@ enum Subcommands {
         #[arg(long)]
         word: String,
 
+        #[arg()]
+        input: PathBuf,
+    },
+
+    EstimateMemory {
         #[arg()]
         input: PathBuf,
     },
@@ -88,6 +94,41 @@ fn main() -> anyhow::Result<()> {
             {
                 let hash = CrosswordHashMap::<'_>::new(&crossword, 4);
                 println!("hash4: {}", hash.count_occurrences(word.as_bytes()));
+            }
+        }
+        Subcommands::EstimateMemory { input } => {
+            let crossword = Crossword::parse(BufReader::new(File::open(input)?))?;
+
+            fn print_size<T: EstimateSize>(name: &str, obj: &T, rel_size: usize) {
+                let size = obj.estimate_size();
+                println!(
+                    "{name}: {} ({:.1}%)",
+                    if size < 1024 {
+                        format!("{size} B")
+                    } else {
+                        format!("{:.1} KiB", size as f64 / 1024.0)
+                    },
+                    (size as f64 / rel_size as f64 * 100.0).round()
+                );
+            }
+
+            let rel_size = crossword.estimate_size();
+
+            print_size("base object", &crossword, rel_size);
+            print_size("naive solver", &NaiveSolver::new(&crossword), rel_size);
+            print_size("needle", &CrosswordNeedleSearch::new(&crossword), rel_size);
+            print_size(
+                "trie capped to 14",
+                &Trie::new(&crossword, Some(14)),
+                rel_size,
+            );
+            print_size("uncapped trie", &Trie::new(&crossword, None), rel_size);
+            for i in 1..=16 {
+                print_size(
+                    &format!("hash {i}"),
+                    &CrosswordHashMap::<'_>::new(&crossword, i),
+                    rel_size,
+                );
             }
         }
     }

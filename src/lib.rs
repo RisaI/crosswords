@@ -1,13 +1,9 @@
-mod hashmap;
-mod naive;
-mod needle;
-mod trie;
+mod size;
+mod solvers;
 mod utils;
 
-pub use hashmap::*;
-pub use naive::*;
-pub use needle::*;
-pub use trie::*;
+pub use size::EstimateSize;
+pub use solvers::*;
 
 use std::io::BufRead;
 
@@ -55,6 +51,12 @@ impl Direction {
 pub struct Crossword {
     pub rows: usize,
     pub data: Box<[u8]>,
+}
+
+impl EstimateSize for Crossword {
+    fn estimate_size(&self) -> usize {
+        self.rows.estimate_size() + self.data.estimate_size()
+    }
 }
 
 impl Crossword {

@@ -1,6 +1,12 @@
-use crate::{utils::many_iter_eq, Crossword, Direction, Solver};
+use crate::{utils::many_iter_eq, Crossword, Direction, EstimateSize, Solver};
 
 pub struct NaiveSolver<'a>(&'a Crossword);
+
+impl EstimateSize for NaiveSolver<'_> {
+    fn estimate_size(&self) -> usize {
+        size_of::<Self>()
+    }
+}
 
 impl<'a> NaiveSolver<'a> {
     pub fn new(crossword: &'a Crossword) -> Self {
