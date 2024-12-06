@@ -7,7 +7,7 @@ mod utils;
 pub use hashmap::*;
 pub use naive::*;
 pub use needle::*;
-// pub use trie::*;
+pub use trie::*;
 
 use std::io::BufRead;
 
@@ -128,7 +128,7 @@ impl Crossword {
         col: usize,
         dir: Direction,
         len: usize,
-    ) -> Option<impl Iterator<Item = u8> + '_> {
+    ) -> Option<impl ExactSizeIterator<Item = u8> + '_> {
         dir.shift_point_bounded((row, col), len - 1, (self.rows(), self.cols()))?;
 
         Some((0..len).map(move |i| {

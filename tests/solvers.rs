@@ -1,7 +1,7 @@
 use core::str;
 use std::{fs::File, io::BufReader};
 
-use crosswords::{Crossword, CrosswordHashMap, CrosswordNeedleSearch, NaiveSolver, Solver};
+use crosswords::{Crossword, CrosswordHashMap, CrosswordNeedleSearch, NaiveSolver, Solver, Trie};
 
 #[test]
 fn solver_output_matches() {
@@ -13,7 +13,10 @@ fn solver_output_matches() {
         .collect::<Vec<_>>();
 
     let naive = NaiveSolver::new(&crossword);
-    let mut solvers: Vec<Box<dyn Solver>> = vec![Box::new(CrosswordNeedleSearch::new(&crossword))];
+    let mut solvers: Vec<Box<dyn Solver>> = vec![
+        Box::new(CrosswordNeedleSearch::new(&crossword)),
+        Box::new(Trie::new(&crossword, None)),
+    ];
 
     (1..=8).for_each(|i| solvers.push(Box::new(CrosswordHashMap::<'_>::new(&crossword, i))));
 
@@ -30,7 +33,8 @@ fn solver_output_matches() {
                 unsafe { str::from_utf8_unchecked(word) },
                 match idx {
                     0 => "needle".into(),
-                    v => format!("hash{}", v),
+                    1 => "trie".into(),
+                    v => format!("hash{}", v - 1),
                 }
             );
         }

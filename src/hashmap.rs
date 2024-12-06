@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use ahash::RandomState;
+use ahash::HashMap;
 use smallvec::SmallVec;
 
 use crate::{utils::is_palindrome, Crossword, Direction, Solver};
@@ -10,21 +8,19 @@ type Positions = SmallVec<[(usize, usize, Direction); 2]>;
 pub struct CrosswordHashMap<'a> {
     word_len: usize,
     crossword: &'a Crossword,
-    complete_words: HashMap<SmallVec<[u8; 16]>, usize, RandomState>,
-    incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions, RandomState>,
+    complete_words: HashMap<SmallVec<[u8; 16]>, usize>,
+    incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions>,
 }
 
 impl<'a> CrosswordHashMap<'a> {
     pub fn new(crossword: &'a Crossword, word_len: usize) -> Self {
         assert!(word_len > 0, "non-zero word length required");
 
-        let mut complete_words: HashMap<SmallVec<[u8; 16]>, usize, RandomState> =
-            HashMap::default();
-        let mut incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions, RandomState> =
-            HashMap::default();
+        let mut complete_words: HashMap<SmallVec<[u8; 16]>, usize> = HashMap::default();
+        let mut incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions> = HashMap::default();
 
         fn add_all_substrings(
-            target: &mut HashMap<SmallVec<[u8; 16]>, usize, RandomState>,
+            target: &mut HashMap<SmallVec<[u8; 16]>, usize>,
             word: impl Iterator<Item = u8>,
         ) {
             let mut current = SmallVec::<[u8; 16]>::new();

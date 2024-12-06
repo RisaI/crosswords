@@ -1,7 +1,7 @@
 use std::{fs::File, io::BufReader};
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use crosswords::{Crossword, CrosswordHashMap, CrosswordNeedleSearch, NaiveSolver, Solver};
+use crosswords::{Crossword, CrosswordHashMap, CrosswordNeedleSearch, Solver, Trie};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let crossword = Crossword::parse(BufReader::new(File::open("test_64k.txt").unwrap())).unwrap();
@@ -13,37 +13,45 @@ pub fn criterion_benchmark(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("solvers");
 
-    group.sample_size(20);
+    let needle_solver = CrosswordNeedleSearch::new(&crossword);
+    let trie_solver = Trie::new(&crossword, Some(14));
 
-    group
-        .bench_function("naive", |b| {
-            let solver = NaiveSolver::new(&crossword);
+    // group.sample_size(20);
 
-            b.iter(|| {
-                for word in &words {
-                    solver.count_occurrences(word);
-                }
-            })
-        })
-        .sample_size(10);
+    // group
+    //     .bench_function("naive", |b| {
+    //         let solver = NaiveSolver::new(&crossword);
+
+    //         b.iter(|| {
+    //             for word in &words {
+    //                 solver.count_occurrences(word);
+    //             }
+    //         })
+    //     });
 
     group.bench_function("needle", |b| {
-        let solver = CrosswordNeedleSearch::new(&crossword);
-
         b.iter(|| {
             for word in &words {
-                solver.count_occurrences(word);
+                needle_solver.count_occurrences(word);
+            }
+        })
+    });
+
+    group.bench_function("trie", |b| {
+        b.iter(|| {
+            for word in &words {
+                trie_solver.count_occurrences(word);
             }
         })
     });
 
     for i in 1..=8 {
-        group.bench_with_input(BenchmarkId::new("hash", i), &i, |b, i| {
-            let solver = CrosswordHashMap::<'_>::new(&crossword, *i as usize);
+        let hash_solver = CrosswordHashMap::<'_>::new(&crossword, i as usize);
 
+        group.bench_with_input(BenchmarkId::new("hash", i), &i, |b, _| {
             b.iter(|| {
                 for word in &words {
-                    solver.count_occurrences(word);
+                    hash_solver.count_occurrences(word);
                 }
             })
         });
