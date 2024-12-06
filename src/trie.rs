@@ -15,8 +15,8 @@ impl TrieEntry {
         self.count += 1;
     }
 
-    pub fn decr(&mut self) {
-        self.count = self.count.saturating_sub(1);
+    pub fn decr(&mut self, by: usize) {
+        self.count = self.count.saturating_sub(by);
     }
 
     pub fn insert(&mut self, mut word: impl Iterator<Item = u8>) {
@@ -71,9 +71,10 @@ impl Trie {
 
                 // Prevent central character from being added more than once
                 if valid_dirs > 1 {
-                    for _ in 0..(valid_dirs - 1) {
-                        root.children.get_mut(&central_char).unwrap().decr();
-                    }
+                    root.children
+                        .get_mut(&central_char)
+                        .unwrap()
+                        .decr(valid_dirs - 1);
                 } else if valid_dirs == 0 {
                     root.insert(once(central_char));
                 }
