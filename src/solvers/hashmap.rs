@@ -7,12 +7,13 @@ use crate::{
 };
 
 type Positions = SmallVec<[(usize, usize, Direction); 2]>;
+const STACK_WORD_LEN: usize = 8;
 
 pub struct CrosswordHashMap<'a> {
     word_len: usize,
     crossword: &'a Crossword,
-    complete_words: HashMap<SmallVec<[u8; 16]>, usize>,
-    incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions>,
+    complete_words: HashMap<SmallVec<[u8; STACK_WORD_LEN]>, usize>,
+    incomplete_words: HashMap<SmallVec<[u8; STACK_WORD_LEN]>, Positions>,
 }
 
 impl EstimateSize for CrosswordHashMap<'_> {
@@ -28,14 +29,15 @@ impl<'a> CrosswordHashMap<'a> {
     pub fn new(crossword: &'a Crossword, word_len: usize) -> Self {
         assert!(word_len > 0, "non-zero word length required");
 
-        let mut complete_words: HashMap<SmallVec<[u8; 16]>, usize> = HashMap::default();
-        let mut incomplete_words: HashMap<SmallVec<[u8; 16]>, Positions> = HashMap::default();
+        let mut complete_words: HashMap<SmallVec<[u8; STACK_WORD_LEN]>, usize> = HashMap::default();
+        let mut incomplete_words: HashMap<SmallVec<[u8; STACK_WORD_LEN]>, Positions> =
+            HashMap::default();
 
         fn add_all_substrings(
-            target: &mut HashMap<SmallVec<[u8; 16]>, usize>,
+            target: &mut HashMap<SmallVec<[u8; STACK_WORD_LEN]>, usize>,
             word: impl Iterator<Item = u8>,
         ) {
-            let mut current = SmallVec::<[u8; 16]>::new();
+            let mut current = SmallVec::<[u8; STACK_WORD_LEN]>::new();
 
             for next in word {
                 current.push(next);
@@ -64,7 +66,7 @@ impl<'a> CrosswordHashMap<'a> {
                         continue;
                     };
 
-                    let word = word.collect::<SmallVec<[u8; 16]>>();
+                    let word = word.collect::<SmallVec<[u8; STACK_WORD_LEN]>>();
 
                     if word_len > 1 || dir == Direction::Right {
                         add_all_substrings(
@@ -104,7 +106,7 @@ impl Solver for CrosswordHashMap<'_> {
             .iter()
             .copied()
             .take(self.word_len)
-            .collect::<SmallVec<[u8; 16]>>();
+            .collect::<SmallVec<[u8; STACK_WORD_LEN]>>();
 
         let mut count = 0;
 
@@ -124,7 +126,7 @@ impl Solver for CrosswordHashMap<'_> {
                 .copied()
                 .rev()
                 .take(self.word_len)
-                .collect::<SmallVec<[u8; 16]>>();
+                .collect::<SmallVec<[u8; STACK_WORD_LEN]>>();
 
             if let Some(directions) = self.incomplete_words.get(&reverse) {
                 for &(row, col, dir) in directions {
